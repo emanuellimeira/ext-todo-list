@@ -100,14 +100,24 @@ class TodoApp {
         });
         document.getElementById('exportNotesBtn')?.addEventListener('click', () => this.exportNotes());
 
-        // Export todos button
+        // Import/Export todos buttons
+        const importTodosBtn = document.getElementById('importTodosBtn');
+        if (importTodosBtn) {
+            importTodosBtn.addEventListener('click', () => {
+                document.getElementById('importFileInput').click();
+            });
+        }
+
         const exportTodosBtn = document.getElementById('exportTodosBtn');
         if (exportTodosBtn) {
             exportTodosBtn.addEventListener('click', () => {
                 this.exportTodos();
             });
         }
-
+        
+        const importFileInput = document.getElementById('importFileInput');
+        importFileInput?.addEventListener('change', (e) => this.importTodos(e));
+        
         // Timer events
         document.getElementById('startTimerBtn')?.addEventListener('click', () => this.startTimer());
         document.getElementById('pauseTimerBtn')?.addEventListener('click', () => this.pauseTimer());
@@ -126,7 +136,13 @@ class TodoApp {
             todosContainer.addEventListener('blur', this.handleTodoActions.bind(this), true);
         }
 
-        // Event Delegation for Notes - handled by bindNoteEvents method
+        // Event Delegation for Notes
+        const notesList = document.getElementById('notesList');
+        if (notesList) {
+            notesList.addEventListener('click', this.handleNoteActions.bind(this));
+            notesList.addEventListener('keydown', this.handleNoteActions.bind(this));
+            notesList.addEventListener('blur', this.handleNoteActions.bind(this), true);
+        }
     }
 
     bindDragAndDropEvents() {
@@ -403,9 +419,20 @@ class TodoApp {
                 createdAt: new Date().toISOString()
             };
             
-            this.notes.push(note);
+            this.notes.unshift(note); // Add to the beginning
             this.saveNotes();
-            this.renderNotes();
+
+            const notesList = document.getElementById('notesList');
+            if (notesList) {
+                const noteElement = this.createNoteElement(note);
+                noteElement.classList.add('note-entering');
+                notesList.prepend(noteElement); // Insert at the top
+
+                noteElement.addEventListener('animationend', () => {
+                    noteElement.classList.remove('note-entering');
+                }, { once: true });
+            }
+
             noteInput.value = '';
             noteInput.focus(); // Manter foco no input para adição rápida
         } else {
@@ -424,85 +451,87 @@ class TodoApp {
     }
 
     deleteNote(id) {
-        this.notes = this.notes.filter(n => n.id !== Number(id));
-        this.saveNotes();
-        this.renderNotes();
+        const noteToDelete = this.notes.find(n => n.id === Number(id));
+        if (!noteToDelete) return;
+
+        // Show a confirmation dialog before deleting
+        const confirmation = confirm(`Tem certeza que deseja excluir esta nota?\n\n"${noteToDelete.text.substring(0, 50)}..."`);
+        if (!confirmation) {
+            return; // Stop if the user cancels
+        }
+
+        const noteItem = document.querySelector(`.note-item[data-id="${id}"]`);
+        if (noteItem) {
+            noteItem.classList.add('note-exiting');
+            noteItem.addEventListener('animationend', () => {
+                this.notes = this.notes.filter(n => n.id !== Number(id));
+                this.saveNotes();
+                noteItem.remove();
+            }, { once: true });
+        } else {
+            // Fallback if element not in DOM
+            this.notes = this.notes.filter(n => n.id !== Number(id));
+            this.saveNotes();
+        }
     }
 
     renderNotes() {
         const notesList = document.getElementById('notesList');
         if (!notesList) return;
         
-        notesList.innerHTML = this.notes.map(note => `
-            <div class="note-item" data-id="${note.id}">
-                <div class="note-text" data-note-id="${note.id}">${note.text}</div>
-                <input type="text" class="note-edit-input" value="${note.text}" style="display: none;" data-note-id="${note.id}">
-                <div class="note-actions">
-                    <button class="delete-btn" data-note-id="${note.id}">
-                        🗑️
-                    </button>
-                </div>
-                <div class="note-date">${new Date(note.createdAt).toLocaleDateString()}</div>
-            </div>
-        `).join('');
+        notesList.innerHTML = ''; // Clear list
+        this.notes.forEach(note => {
+            const noteElement = this.createNoteElement(note);
+            notesList.appendChild(noteElement);
+        });
         
-        // Bind events after rendering
-        this.bindNoteEvents();
+        // Event binding is now handled by delegation in bindEvents()
     }
 
-    bindNoteEvents() {
-        // Note text click events for editing
-        document.querySelectorAll('.note-text').forEach(text => {
-            text.addEventListener('click', (e) => {
-                const noteId = e.target.dataset.noteId;
-                this.startEditNote(noteId);
-            });
-        });
+    createNoteElement(note) {
+        const div = document.createElement('div');
+        div.className = 'note-item';
+        div.dataset.id = note.id;
+        div.innerHTML = `
+            <div class="note-text" data-note-id="${note.id}">${this.escapeHtml(note.text)}</div>
+            <input type="text" class="note-edit-input" value="${this.escapeHtml(note.text)}" style="display: none;" data-note-id="${note.id}">
+            <div class="note-actions">
+                <button class="delete-btn" data-note-id="${note.id}">
+                    🗑️
+                </button>
+            </div>
+            <div class="note-date">${new Date(note.createdAt).toLocaleDateString()}</div>
+        `;
+        return div;
+    }
 
-        // Use event delegation for all note events
-        const notesList = document.getElementById('notesList');
-        if (notesList) {
-            // Remove event listeners anteriores para evitar duplicação
-            notesList.removeEventListener('click', this.handleNoteClick);
-            notesList.removeEventListener('keydown', this.handleNoteKeydown);
-            notesList.removeEventListener('blur', this.handleNoteBlur);
-            
-            // Criar funções bound para poder remover depois
-            this.handleNoteClick = (e) => {
-                if (e.target.classList.contains('delete-btn') && e.target.dataset.noteId) {
+    handleNoteActions(e) {
+        const target = e.target;
+        const noteItem = target.closest('.note-item');
+        if (!noteItem) return;
+
+        const noteId = noteItem.dataset.id;
+
+        if (e.type === 'click') {
+            if (target.classList.contains('delete-btn')) {
+                this.deleteNote(noteId);
+            } else if (target.classList.contains('note-text')) {
+                this.startEditNote(noteId);
+            }
+        } else if (target.classList.contains('note-edit-input')) {
+            if (e.type === 'keydown') {
+                if (e.key === 'Enter') {
                     e.preventDefault();
-                    e.stopPropagation();
-                    const noteId = e.target.dataset.noteId;
-                    this.deleteNote(noteId);
-                }
-            };
-            
-            this.handleNoteKeydown = (e) => {
-                if (e.target.classList.contains('note-edit-input') && e.target.dataset.noteId) {
-                    const noteId = e.target.dataset.noteId;
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        this.finishEditNote(noteId, e.target.value);
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        this.cancelEditNote(noteId);
-                    }
-                }
-            };
-            
-            this.handleNoteBlur = (e) => {
-                if (e.target.classList.contains('note-edit-input') && e.target.dataset.noteId) {
-                    const noteId = e.target.dataset.noteId;
                     this.finishEditNote(noteId, e.target.value);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.cancelEditNote(noteId);
                 }
-            };
-            
-            notesList.addEventListener('click', this.handleNoteClick);
-            notesList.addEventListener('keydown', this.handleNoteKeydown);
-            notesList.addEventListener('blur', this.handleNoteBlur, true);
+            } else if (e.type === 'blur') {
+                this.finishEditNote(noteId, e.target.value);
+            }
         }
     }
-
     startEditNote(id) {
         const noteItem = document.querySelector(`[data-id="${id}"]`);
         if (!noteItem) return;
@@ -614,7 +643,7 @@ class TodoApp {
                 if (todo.category) {
                     content += `  Categoria: ${todo.category}\n`;
                 }
-                content += `  Data: ${this.formatDate(todo.date)}\n\n`;
+                content += `  Data: ${this.formatDate(todo.date)} (raw: ${todo.date})\n\n`;
             });
         }
         
@@ -627,7 +656,7 @@ class TodoApp {
                 if (todo.category) {
                     content += `  Categoria: ${todo.category}\n`;
                 }
-                content += `  Data: ${this.formatDate(todo.date)}\n\n`;
+                content += `  Data: ${this.formatDate(todo.date)} (raw: ${todo.date})\n\n`;
             });
         }
         
@@ -640,7 +669,7 @@ class TodoApp {
                 if (todo.category) {
                     content += `  Categoria: ${todo.category}\n`;
                 }
-                content += `  Data: ${this.formatDate(todo.date)}\n`;
+                content += `  Data: ${this.formatDate(todo.date)} (raw: ${todo.date})\n`;
                 if (todo.deletedAt) {
                     content += `  Excluída em: ${this.formatDate(todo.deletedAt.split('T')[0])}\n`;
                 }
@@ -667,6 +696,100 @@ class TodoApp {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    importTodos(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        if (file.type !== 'text/plain') {
+            alert('Por favor, selecione um arquivo .txt válido.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target.result;
+            try {
+                const importedTasks = this.parseImportedTodos(content);
+                if (importedTasks.length === 0) {
+                    alert('Nenhuma tarefa válida encontrada no arquivo.');
+                    return;
+                }
+
+                // Add imported tasks to the main list, avoiding duplicates by text and date
+                const existingTasks = new Set(this.todos.map(t => `${t.text.trim()}|${t.date}`));
+                const newTasks = [];
+                for (const task of importedTasks) {
+                    const taskSignature = `${task.text.trim()}|${task.date}`;
+                    if (!existingTasks.has(taskSignature)) {
+                        newTasks.push(task);
+                        existingTasks.add(taskSignature); // Avoid duplicates within the same file
+                    }
+                }
+
+                if (newTasks.length > 0) {
+                    this.todos.unshift(...newTasks);
+                    this.saveTodos();
+                    this.renderTodos();
+                    this.updateStats();
+                    alert(`${newTasks.length} tarefa(s) importada(s) com sucesso!`);
+                } else {
+                    alert('Nenhuma tarefa nova para importar. As tarefas do arquivo já existem.');
+                }
+
+            } catch (error) {
+                console.error('Erro ao importar tarefas:', error);
+                alert('Ocorreu um erro ao processar o arquivo. Verifique o formato.');
+            } finally {
+                // Reset file input to allow importing the same file again
+                event.target.value = '';
+            }
+        };
+        reader.onerror = () => {
+            alert('Não foi possível ler o arquivo.');
+            event.target.value = '';
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    parseImportedTodos(content) {
+        const lines = content.split('\n');
+        const tasks = [];
+        let currentTask = null;
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            
+            if (/^(TAREFAS|Exportado em:|PENDENTES|CONCLUÍDAS|EXCLUÍDAS|RESUMO|=+)/i.test(trimmedLine) || !trimmedLine) {
+                continue;
+            }
+
+            if (trimmedLine.startsWith('□') || trimmedLine.startsWith('☑')) {
+                currentTask = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    text: trimmedLine.substring(2).trim(),
+                    completed: trimmedLine.startsWith('☑'),
+                    deleted: false,
+                    date: this._getLocalISODate(),
+                    category: null,
+                    createdAt: new Date().toISOString()
+                };
+                tasks.push(currentTask);
+            } else if (currentTask && tasks[tasks.length - 1] === currentTask) {
+                if (trimmedLine.startsWith('Categoria:')) {
+                    currentTask.category = trimmedLine.substring(10).trim();
+                } else if (trimmedLine.startsWith('Data:')) {
+                    const rawDateMatch = trimmedLine.match(/\(raw: (....-..-..)\)/);
+                    if (rawDateMatch && rawDateMatch[1]) {
+                        currentTask.date = rawDateMatch[1];
+                    }
+                }
+            }
+        }
+        return tasks;
     }
 
     saveNotes() {

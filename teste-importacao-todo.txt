@@ -1,0 +1,8 @@
+□ Finalizar o relatório do projeto X
+  Categoria: Trabalho
+  Data: Exemplo (raw: 2024-09-25)
+
+☑ Comprar ingressos para o cinema
+  Data: Exemplo (raw: 2024-09-20)
+
+□ Ligar para o encanador

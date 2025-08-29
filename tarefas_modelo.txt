@@ -1,0 +1,18 @@
+# ARQUIVO MODELO DE IMPORTAÇÃO DE TAREFAS
+#
+# Use este formato para importar suas tarefas para a extensão "My Todo Lists".
+#
+# INSTRUÇÕES:
+# - Use '□' (quadrado vazio) no início da linha para tarefas PENDENTES.
+# - Use '☑' (quadrado com check) no início da linha para tarefas CONCLUÍDAS.
+# - A Categoria é opcional. Se presente, deve estar em uma linha separada, começando com "Categoria: ".
+# - A Data é opcional, mas recomendada. Deve estar em uma linha separada e conter o formato (raw: AAAA-MM-DD) para ser importada corretamente.
+
+□ Finalizar o relatório do projeto X
+  Categoria: Trabalho
+  Data: Exemplo (raw: 2024-09-25)
+
+☑ Comprar ingressos para o cinema
+  Data: Exemplo (raw: 2024-09-20)
+
+□ Ligar para o encanador

@@ -50,7 +50,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- Todo List View -->
-        <div class="view" id="todoView">
+        <div class="view view-layout-flex" id="todoView">
             <div class="filters-container">
                 <div class="date-filters">
                     <button class="filter-btn" data-filter="all">Todas</button>
@@ -60,6 +60,9 @@
                     <button class="filter-btn" data-filter="month">Mês</button>
                     <button class="filter-btn" data-filter="year">Ano</button>
                 </div>
+                <button id="importTodosBtn" class="icon-btn" title="Importar tarefas de um arquivo .txt">
+                    📥
+                </button>
                 <button id="exportTodosBtn" class="icon-btn" title="Exportar tarefas filtradas para TXT">
                     📄
                 </button>
@@ -97,7 +100,7 @@
         </div>
 
         <!-- Notes View -->
-        <div class="view" id="notesView" style="display: none;">
+        <div class="view view-layout-flex" id="notesView" style="display: none;">
             <div class="notes-header">
                 <div class="notes-controls">
                     <div class="input-group">
@@ -114,7 +117,7 @@
         </div>
 
         <!-- Focus View -->
-        <div class="view" id="focusView" style="display: none;">
+        <div class="view view-layout-scroll" id="focusView" style="display: none;">
             <div class="focus-timer">
                 <div class="timer-display" id="timerDisplay">25:00</div>
                 <div class="timer-controls">
@@ -145,7 +148,7 @@
         </div>
 
         <!-- Photo View -->
-        <div class="view" id="photoView" style="display: none;">
+        <div class="view view-layout-scroll" id="photoView" style="display: none;">
             <div class="photo-header">
                 <div class="clock-display" id="clockDisplay">00:00:00</div>
                 <div class="pomodoro-timer">
@@ -192,6 +195,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="importFileInput" accept=".txt" style="display: none;">
 
     <!-- Main Application Script -->
     <script src="script.js"></script>
