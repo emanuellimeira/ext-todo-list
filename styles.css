@@ -10,7 +10,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: var(--text-primary);
-    overflow: hidden;
+    overflow: hidden; /* Keep hidden for main body */
     height: 100vh;
     line-height: 1.4;
     font-size: 13px;
@@ -27,6 +27,7 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 20px var(--shadow-light);
     background: var(--bg-primary);
+    min-height: 0; /* Allow flex children to shrink properly */
 }
 
 /* Header styles */
@@ -223,9 +224,14 @@ header {
 
 /* View container */
 .view {
-    animation: fadeIn 0.3s ease;
+    display: none; /* Hide all views by default */
     flex: 1; /* Make all views fill the remaining vertical space */
     min-height: 0; /* A critical fix for flexbox to prevent content from overflowing its container */
+}
+
+.view.active {
+    display: block; /* Show the active view */
+    animation: fadeIn 0.3s ease;
 }
 
 .view-layout-flex {
@@ -236,7 +242,6 @@ header {
 }
 
 .view-layout-scroll {
-    display: block; /* Default display */
     overflow-y: auto; /* Make the entire view scrollable */
     padding: 16px;
 }
@@ -448,14 +453,9 @@ header {
 }
 
 .todos-container {
-    flex: 1;
-    overflow-y: auto;
+    /* overflow-y is now handled by the parent .view-layout-scroll */
     padding: 12px 16px;
-    /* The max-height property was causing the list to be cut off.
-    Flexbox, via the parent .view-layout-flex, now correctly handles the height. */
     scrollbar-color: var(--primary-color) transparent;
-    min-height: 0; /* Ensure flexbox child can shrink */
-    max-height: 100%; /* Prevent overflow issues */
 }
 
 .todos-container::-webkit-scrollbar {
@@ -904,8 +904,7 @@ header {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    /* max-height was replaced by flexbox to fill available space */
-    overflow-y: auto;
+    /* Scrolling is now handled by the parent .view-layout-scroll */
     flex: 1;
     padding: 0 16px 16px;
     scrollbar-color: var(--primary-color) transparent;
@@ -1350,4 +1349,241 @@ header {
         flex: 1;
         min-width: 60px;
     }
+}
+
+/* Diary Styles */
+.diary-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+}
+
+.diary-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.diary-date-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 13px;
+    outline: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease;
+}
+
+.diary-title-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease;
+}
+
+.diary-content-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 13px;
+    outline: none;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color 0.2s ease;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.diary-date-input:focus,
+.diary-title-input:focus,
+.diary-content-input:focus {
+    border-color: var(--primary-color);
+}
+
+.add-diary-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 16px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.add-diary-btn:hover {
+    background: var(--button-primary-hover);
+    transform: translateY(-1px);
+}
+
+.diary-entries {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.diary-entry {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.diary-entry:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+.diary-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.diary-entry-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.diary-entry-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.diary-entry-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.diary-entry-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.diary-action-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.diary-action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.diary-action-btn.delete:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+/* Diary Edit Inputs */
+.edit-title {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.edit-title:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+.edit-content {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+}
+
+.edit-content:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+/* Diary Edit Buttons */
+.btn-save,
+.btn-cancel {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+}
+
+.btn-save {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn-save:hover {
+    background: #3a7bc8;
+    border-color: #3a7bc8;
+}
+
+.btn-cancel {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
 }

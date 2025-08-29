@@ -2,6 +2,7 @@ class TodoApp {
     constructor() {
         this.todos = [];
         this.notes = [];
+        this.diary = [];
         this.currentFilter = 'all';
         this.showDeleted = false;
         this.currentView = 'todo';
@@ -25,9 +26,11 @@ class TodoApp {
     init() {
         this.loadTodos();
         this.loadNotes();
+        this.loadDiary();
         this.bindEvents();
         this.bindDragAndDropEvents();
         this.setDefaultDate();
+        this.setDefaultDiaryDate();
         this.loadTheme();
         this.renderTodos();
         this.updateStats();
@@ -142,6 +145,19 @@ class TodoApp {
             notesList.addEventListener('click', this.handleNoteActions.bind(this));
             notesList.addEventListener('keydown', this.handleNoteActions.bind(this));
             notesList.addEventListener('blur', this.handleNoteActions.bind(this), true);
+        }
+
+        // Diary events
+        document.getElementById('addDiaryBtn')?.addEventListener('click', () => this.addDiaryEntry());
+        document.getElementById('diaryTitle')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.addDiaryEntry();
+        });
+        document.getElementById('exportDiaryBtn')?.addEventListener('click', () => this.exportDiary());
+
+        // Event Delegation for Diary
+        const diaryEntriesList = document.getElementById('diaryEntries');
+        if (diaryEntriesList) {
+            diaryEntriesList.addEventListener('click', this.handleDiaryActions.bind(this));
         }
     }
 
@@ -405,6 +421,8 @@ class TodoApp {
             this.renderFocusMode();
         } else if (view === 'photo') {
             this.renderPhotoMode();
+        } else if (view === 'diary') {
+            this.renderDiary();
         }
     }
 
@@ -1378,6 +1396,198 @@ class TodoApp {
         
         this.todos = testTodos;
         this.saveTodos();
+    }
+
+    // Diary Methods
+    setDefaultDiaryDate() {
+        const diaryDateInput = document.getElementById('diaryDate');
+        if (diaryDateInput) {
+            diaryDateInput.value = this._getLocalISODate();
+        }
+    }
+
+    addDiaryEntry() {
+        const dateInput = document.getElementById('diaryDate');
+        const titleInput = document.getElementById('diaryTitle');
+        const contentInput = document.getElementById('diaryContent');
+        
+        const date = dateInput?.value;
+        const title = titleInput?.value?.trim();
+        const content = contentInput?.value?.trim();
+        
+        if (!title || !content) {
+            alert('Por favor, preencha o título e o conteúdo.');
+            return;
+        }
+        
+        const entry = {
+            id: Date.now().toString(),
+            date: date || this._getLocalISODate(),
+            title: title,
+            content: content,
+            createdAt: new Date().toISOString()
+        };
+        
+        this.diary.unshift(entry);
+        this.saveDiary();
+        this.renderDiary();
+        
+        // Clear inputs
+        if (titleInput) titleInput.value = '';
+        if (contentInput) contentInput.value = '';
+        this.setDefaultDiaryDate();
+    }
+
+    deleteDiaryEntry(id) {
+        this.diary = this.diary.filter(entry => entry.id !== id);
+        this.saveDiary();
+        this.renderDiary();
+    }
+
+    editDiaryEntry(id, newTitle, newContent) {
+        const entry = this.diary.find(entry => entry.id === id);
+        if (entry) {
+            entry.title = newTitle;
+            entry.content = newContent;
+            entry.updatedAt = new Date().toISOString();
+            this.saveDiary();
+            this.renderDiary();
+        }
+    }
+
+    renderDiary() {
+        const entriesList = document.getElementById('diaryEntries');
+        if (!entriesList) return;
+        
+        if (this.diary.length === 0) {
+            entriesList.innerHTML = '<p class="empty-message">Nenhuma entrada no diário ainda.</p>';
+            return;
+        }
+        
+        entriesList.innerHTML = this.diary.map(entry => this.createDiaryEntryElement(entry)).join('');
+    }
+
+    createDiaryEntryElement(entry) {
+        return `
+            <div class="diary-entry" data-id="${entry.id}">
+                <div class="diary-entry-header">
+                    <h3 class="diary-entry-title">${this.escapeHtml(entry.title)}</h3>
+                    <span class="diary-entry-date">${this.formatDate(entry.date)}</span>
+                </div>
+                <div class="diary-entry-content">${this.escapeHtml(entry.content).replace(/\n/g, '<br>')}</div>
+                <div class="diary-entry-actions">
+                    <button class="diary-action-btn" data-action="edit" data-id="${entry.id}">Editar</button>
+                    <button class="diary-action-btn delete" data-action="delete" data-id="${entry.id}">Excluir</button>
+                </div>
+            </div>
+        `;
+    }
+
+    handleDiaryActions(e) {
+        const action = e.target.dataset.action;
+        const id = e.target.dataset.id;
+        
+        if (action === 'delete') {
+            if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                this.deleteDiaryEntry(id);
+            }
+        } else if (action === 'edit') {
+            this.startEditDiaryEntry(id);
+        } else if (action === 'save-edit') {
+            this.finishEditDiaryEntry(id);
+        } else if (action === 'cancel-edit') {
+            this.cancelEditDiaryEntry(id);
+        }
+    }
+
+    startEditDiaryEntry(id) {
+        const entry = this.diary.find(entry => entry.id === id);
+        if (!entry) return;
+        
+        const entryElement = document.querySelector(`[data-id="${id}"]`);
+        if (!entryElement) return;
+        
+        entryElement.innerHTML = `
+            <div class="diary-entry-header">
+                <input type="text" class="edit-title" value="${this.escapeHtml(entry.title)}" />
+                <span class="diary-entry-date">${this.formatDate(entry.date)}</span>
+            </div>
+            <textarea class="edit-content">${this.escapeHtml(entry.content)}</textarea>
+            <div class="diary-entry-actions">
+                <button class="btn-save" data-action="save-edit" data-id="${id}">Salvar</button>
+                <button class="btn-cancel" data-action="cancel-edit" data-id="${id}">Cancelar</button>
+            </div>
+        `;
+        
+        const titleInput = entryElement.querySelector('.edit-title');
+        const contentInput = entryElement.querySelector('.edit-content');
+        
+        if (titleInput) titleInput.focus();
+        
+        // Auto-resize textarea
+        if (contentInput) {
+            contentInput.style.height = 'auto';
+            contentInput.style.height = contentInput.scrollHeight + 'px';
+            contentInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        }
+    }
+
+    finishEditDiaryEntry(id) {
+        const entryElement = document.querySelector(`[data-id="${id}"]`);
+        if (!entryElement) return;
+        
+        const titleInput = entryElement.querySelector('.edit-title');
+        const contentInput = entryElement.querySelector('.edit-content');
+        
+        const newTitle = titleInput?.value?.trim();
+        const newContent = contentInput?.value?.trim();
+        
+        if (!newTitle || !newContent) {
+            alert('Por favor, preencha o título e o conteúdo.');
+            return;
+        }
+        
+        this.editDiaryEntry(id, newTitle, newContent);
+    }
+
+    cancelEditDiaryEntry(id) {
+        this.renderDiary();
+    }
+
+    exportDiary() {
+        if (this.diary.length === 0) {
+            alert('Não há entradas no diário para exportar.');
+            return;
+        }
+        
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            entries: this.diary
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `diario_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    }
+
+    saveDiary() {
+        chrome.storage.local.set({ diary: this.diary });
+    }
+
+    loadDiary() {
+        chrome.storage.local.get(['diary'], (result) => {
+            this.diary = result.diary || [];
+            if (this.currentView === 'diary') {
+                this.renderDiary();
+            }
+        });
     }
 }
 

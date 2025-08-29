@@ -43,6 +43,10 @@
                     <span class="nav-icon">📸</span>
                     <span class="nav-text">Modo Foto</span>
                 </button>
+                <button class="nav-btn" data-view="diary">
+                    <span class="nav-icon">📖</span>
+                    <span class="nav-text">Diário</span>
+                </button>
             </nav>
         </div>
 
@@ -50,7 +54,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- Todo List View -->
-        <div class="view view-layout-flex" id="todoView">
+        <div class="view view-layout-scroll active" id="todoView">
             <div class="filters-container">
                 <div class="date-filters">
                     <button class="filter-btn" data-filter="all">Todas</button>
@@ -100,7 +104,7 @@
         </div>
 
         <!-- Notes View -->
-        <div class="view view-layout-flex" id="notesView" style="display: none;">
+        <div class="view view-layout-scroll" id="notesView">
             <div class="notes-header">
                 <div class="notes-controls">
                     <div class="input-group">
@@ -117,7 +121,7 @@
         </div>
 
         <!-- Focus View -->
-        <div class="view view-layout-scroll" id="focusView" style="display: none;">
+        <div class="view view-layout-scroll" id="focusView">
             <div class="focus-timer">
                 <div class="timer-display" id="timerDisplay">25:00</div>
                 <div class="timer-controls">
@@ -148,7 +152,7 @@
         </div>
 
         <!-- Photo View -->
-        <div class="view view-layout-scroll" id="photoView" style="display: none;">
+        <div class="view view-layout-scroll" id="photoView">
             <div class="photo-header">
                 <div class="clock-display" id="clockDisplay">00:00:00</div>
                 <div class="pomodoro-timer">
@@ -169,7 +173,26 @@
             </div>
         </div>
 
-        <div class="empty-state" id="emptyState" style="display: none;">
+        <!-- Diary View -->
+        <div class="view view-layout-scroll" id="diaryView">
+            <div class="diary-header">
+                <div class="diary-controls">
+                    <div class="input-group">
+                        <input type="date" id="diaryDate" class="diary-date-input">
+                        <input type="text" id="diaryTitle" class="diary-title-input" placeholder="Título da entrada...">
+                        <textarea id="diaryContent" class="diary-content-input" placeholder="Escreva sua entrada do diário aqui..." rows="4"></textarea>
+                        <button id="addDiaryBtn" class="add-diary-btn">📝 Adicionar Entrada</button>
+                    </div>
+                    <button id="exportDiaryBtn" class="export-btn">📥 Exportar Diário</button>
+                </div>
+            </div>
+            
+            <div class="diary-entries" id="diaryEntries">
+                <!-- Diary entries will be rendered here -->
+            </div>
+        </div>
+
+        <div class="empty-state" id="emptyState">
             <div class="empty-icon">📋</div>
             <p>Nenhuma tarefa encontrada</p>
             <small>Adicione uma nova tarefa para começar!</small>
