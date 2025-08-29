@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "My Todo Lists",
+  "version": "1.0",
+  "description": "Organize suas tarefas por dia, semana, mês e ano",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "activeTab"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "My Todo Lists"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.svg",
+    "32": "icons/icon32.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  }
+}

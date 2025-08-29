@@ -1,0 +1,198 @@
+/* Timer and Pomodoro styles */
+
+.timer-section {
+    text-align: center;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.timer-display {
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.timer-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.timer-controls .btn {
+    min-width: 80px;
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+/* Pomodoro specific styles */
+.pomodoro-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.pomodoro-header {
+    margin-bottom: 30px;
+}
+
+.pomodoro-header h2 {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.pomodoro-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.pomodoro-timer {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    padding: 40px 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px var(--shadow-light);
+}
+
+.pomodoro-display {
+    font-size: 64px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 24px;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 8px var(--shadow-medium);
+}
+
+.pomodoro-controls {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pomodoro-controls .btn {
+    min-width: 100px;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+/* Timer states */
+.timer-running .timer-display,
+.timer-running .pomodoro-display {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Clock styles */
+.current-time {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Timer progress indicator */
+.timer-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    margin: 16px 0;
+    overflow: hidden;
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+
+/* Responsive timer styles */
+@media (max-width: 400px) {
+    .timer-display {
+        font-size: 36px;
+    }
+    
+    .pomodoro-display {
+        font-size: 48px;
+    }
+    
+    .timer-controls,
+    .pomodoro-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .timer-controls .btn,
+    .pomodoro-controls .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .timer-section,
+    .pomodoro-timer {
+        padding: 16px;
+    }
+}
+
+/* Timer notification styles */
+.timer-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--success-color);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Timer button states */
+.timer-controls .btn:disabled,
+.pomodoro-controls .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.timer-controls .btn-success:hover:not(:disabled) {
+    background: #38a169;
+}
+
+.timer-controls .btn-warning:hover:not(:disabled) {
+    background: #dd6b20;
+}
+
+.timer-controls .btn-secondary:hover:not(:disabled) {
+    background: var(--hover-color);
+}

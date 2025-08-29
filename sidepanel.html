@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Todo Lists</title>
+    <!-- CSS Modular -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/todo-list.css">
+    <link rel="stylesheet" href="css/notas.css">
+    <link rel="stylesheet" href="css/timer.css">
+    <link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>📝 My Todo Lists</h1>
+                <button class="hamburger-btn" id="hamburgerBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Menu Lateral -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Menu</h2>
+                <button class="close-btn" id="closeSidebar">×</button>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-view="todo">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Lista de Tarefas</span>
+                </button>
+                <button class="nav-btn" data-view="notes">
+                    <span class="nav-icon">📝</span>
+                    <span class="nav-text">Notas</span>
+                </button>
+                <button class="nav-btn" data-view="focus">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-text">Modo Foco</span>
+                </button>
+                <button class="nav-btn" data-view="photo">
+                    <span class="nav-icon">📸</span>
+                    <span class="nav-text">Modo Foto</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Overlay para fechar menu -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Todo List View -->
+        <div class="view" id="todoView">
+            <div class="date-filters">
+                <button class="filter-btn" data-filter="all">Todas</button>
+                <button class="filter-btn" data-filter="yesterday">Ontem</button>
+                <button class="filter-btn active" data-filter="today">Hoje</button>
+                <button class="filter-btn" data-filter="week">Semana</button>
+                <button class="filter-btn" data-filter="month">Mês</button>
+                <button class="filter-btn" data-filter="year">Ano</button>
+            </div>
+
+            <div class="add-todo-section">
+                <div class="input-group">
+                    <input type="date" id="todoDate" class="date-input">
+                    <div class="input-row">
+                        <input type="text" id="todoInput" class="todo-input" placeholder="Adicionar nova tarefa...">
+                        <input type="text" id="todoCategory" placeholder="Categoria (opcional)">
+                    </div>
+                    <button id="addBtn" class="add-btn">Adicionar tarefa</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalTodos">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="completedTodos">0</span>
+                    <span class="stat-label">Concluídas</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="pendingTodos">0</span>
+                    <span class="stat-label">Pendentes</span>
+                </div>
+            </div>
+
+            <div class="todos-container" id="todosContainer">
+                <!-- Todos will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Notes View -->
+        <div class="view" id="notesView" style="display: none;">
+            <div class="notes-header">
+                <div class="notes-controls">
+                    <div class="input-group">
+                        <input type="text" id="noteTitle" class="note-title-input" placeholder="Digite sua nota aqui...">
+                        <button id="addNoteBtn" class="add-note-btn">✨ Adicionar Nota</button>
+                    </div>
+                    <button id="exportNotesBtn" class="export-btn">📥 Exportar Notas</button>
+                </div>
+            </div>
+            
+            <div class="notes-list" id="notesList">
+                <!-- Notes will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Focus View -->
+        <div class="view" id="focusView" style="display: none;">
+            <div class="focus-timer">
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                <div class="timer-controls">
+                    <button id="startTimerBtn" class="timer-btn">▶️ Iniciar</button>
+                    <button id="pauseTimerBtn" class="timer-btn">⏸️ Pausar</button>
+                    <button id="resetTimerBtn" class="timer-btn">🔄 Reset</button>
+                </div>
+            </div>
+            
+            <div class="focus-todos">
+                <h3>Tarefas para Hoje</h3>
+                
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <span class="progress-text">Progresso do Dia</span>
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <div id="focusTodosList">
+                    <!-- Focus todos will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo View -->
+        <div class="view" id="photoView" style="display: none;">
+            <div class="photo-header">
+                <div class="clock-display" id="clockDisplay">00:00:00</div>
+                <div class="pomodoro-timer">
+                    <div class="pomodoro-display" id="pomodoroDisplay">25:00</div>
+                    <div class="pomodoro-controls">
+                        <button id="startPomodoroBtn" class="timer-btn">🍅 Iniciar</button>
+                        <button id="pausePomodoroBtn" class="timer-btn">⏸️ Pausar</button>
+                        <button id="resetPomodoroBtn" class="timer-btn">🔄 Reset</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="photo-todos">
+                <h3>Lista de Tarefas</h3>
+                <div id="photoTodosList">
+                    <!-- Photo todos will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <p>Nenhuma tarefa encontrada</p>
+            <small>Adicione uma nova tarefa para começar!</small>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Configurações</h2>
+                <button id="closeSettings" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label for="themeToggle">🌙 Modo Escuro</label>
+                    <input type="checkbox" id="themeToggle" class="theme-toggle">
+                </div>
+                <div class="setting-item">
+                    <label for="showDeleted">🗑️ Mostrar Tarefas Excluídas</label>
+                    <input type="checkbox" id="showDeleted" class="show-deleted-toggle">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modular -->
+    <script src="js/todo-list.js"></script>
+    <script src="js/notas.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
