@@ -12,7 +12,8 @@ class TodoApp {
             seconds: 0,
             isRunning: false,
             interval: null
-        };
+        }
+    
         this.pomodoro = {
             minutes: 25,
             seconds: 0,
@@ -98,6 +99,9 @@ class TodoApp {
                 this.closeSidebarFunc(); // Close sidebar when navigating
             });
         });
+        
+        // Drag and drop events
+        this.bindDragAndDropEvents();
 
         // Notes events
         document.getElementById('addNoteBtn')?.addEventListener('click', () => this.notesModule.addNote());
@@ -115,6 +119,89 @@ class TodoApp {
         document.getElementById('startPomodoro')?.addEventListener('click', () => this.timerModule.startPomodoro());
         document.getElementById('pausePomodoro')?.addEventListener('click', () => this.timerModule.pausePomodoro());
         document.getElementById('resetPomodoro')?.addEventListener('click', () => this.timerModule.resetPomodoro());
+    }
+    
+    bindDragAndDropEvents() {
+        let draggedElement = null;
+        let draggedIndex = -1;
+        
+        // Use event delegation for drag events
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('todo-item')) {
+                draggedElement = e.target;
+                draggedIndex = this.getDraggedTodoIndex(e.target.dataset.id);
+                e.target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', e.target.outerHTML);
+            }
+        });
+        
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('todo-item')) {
+                e.target.classList.remove('dragging');
+                draggedElement = null;
+                draggedIndex = -1;
+                // Remove all drag-over classes
+                document.querySelectorAll('.todo-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+            }
+        });
+        
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const todoItem = e.target.closest('.todo-item');
+            if (todoItem && todoItem !== draggedElement) {
+                e.dataTransfer.dropEffect = 'move';
+                // Remove drag-over from all items
+                document.querySelectorAll('.todo-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                // Add drag-over to current item
+                todoItem.classList.add('drag-over');
+            }
+        });
+        
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const dropTarget = e.target.closest('.todo-item');
+            
+            if (dropTarget && draggedElement && dropTarget !== draggedElement) {
+                const dropIndex = this.getDraggedTodoIndex(dropTarget.dataset.id);
+                this.reorderTodos(draggedIndex, dropIndex);
+            }
+            
+            // Clean up
+            document.querySelectorAll('.todo-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        });
+    }
+    
+    getDraggedTodoIndex(todoId) {
+        const filteredTodos = this.getFilteredTodos();
+        return filteredTodos.findIndex(todo => todo.id == todoId);
+    }
+    
+    reorderTodos(fromIndex, toIndex) {
+        const filteredTodos = this.getFilteredTodos();
+        const draggedTodo = filteredTodos[fromIndex];
+        const targetTodo = filteredTodos[toIndex];
+        
+        // Find the actual indices in the main todos array
+        const draggedActualIndex = this.todos.findIndex(todo => todo.id === draggedTodo.id);
+        const targetActualIndex = this.todos.findIndex(todo => todo.id === targetTodo.id);
+        
+        // Remove the dragged todo from its current position
+        const [movedTodo] = this.todos.splice(draggedActualIndex, 1);
+        
+        // Insert it at the new position
+        const newTargetIndex = draggedActualIndex < targetActualIndex ? targetActualIndex - 1 : targetActualIndex;
+        this.todos.splice(newTargetIndex, 0, movedTodo);
+        
+        // Save and re-render
+        this.saveTodos();
+        this.renderTodos();
     }
 
     switchView(view) {
@@ -213,7 +300,8 @@ class TodoApp {
         }
         
         todoList.innerHTML = filteredTodos.map(todo => `
-            <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+            <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}" draggable="true">
+                <div class="drag-handle" title="Arrastar para reordenar">⋮⋮</div>
                 <div class="todo-checkbox" data-todo-id="${todo.id}">
                     <span class="checkbox-icon">${todo.completed ? '✓' : ''}</span>
                 </div>

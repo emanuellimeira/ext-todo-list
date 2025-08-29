@@ -43,6 +43,18 @@ OBSERVAÇÃO:
 
 # 04 - 
 
+TypeError: Cannot read properties of undefined (reading 'startEditNote') TypeError: Cannot read properties of undefined (reading 'deleteNote')
+
+# 05 - 
+
+Não está mostrando as tarefas
+
+Ao clicar semana, mes e ano não aparece as tarefas
+
+Data em formato DD/MM/YYYY - descolado da parte inferior com "adicionar nova tarefa"  botão de adicionar com texto "Adicionar tarefa" e do mesmo tamanho que o input "adicionar nova tarefa"
+
+# 06 - 
+
 # Extensão de Notas
 - Modo de visualização: Dark mode e White
 - 

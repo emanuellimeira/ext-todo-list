@@ -450,6 +450,29 @@ header {
     margin-bottom: 8px;
 }
 
+.todo-item.dragging {
+    opacity: 0.5;
+    background: var(--hover-color);
+}
+
+.todo-item.drag-over {
+    border-top: 2px solid var(--primary-color);
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 0 4px;
+}
+
+.todo-item:hover .drag-handle {
+    opacity: 1;
+}
+
+.drag-handle:active { cursor: grabbing; }
+
 .todo-item:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px var(--shadow-light);

@@ -6,6 +6,7 @@ class TodoApp {
         this.showDeleted = false;
         this.currentView = 'todo';
         this.selectedTodoForFocus = null;
+        this.clickTimeouts = {};
         this.timer = {
             minutes: 25,
             seconds: 0,
@@ -25,6 +26,7 @@ class TodoApp {
         this.loadTodos();
         this.loadNotes();
         this.bindEvents();
+        this.bindDragAndDropEvents();
         this.setDefaultDate();
         this.loadTheme();
         this.renderTodos();
@@ -107,77 +109,163 @@ class TodoApp {
         document.getElementById('startPomodoroBtn')?.addEventListener('click', () => this.startPomodoro());
         document.getElementById('pausePomodoroBtn')?.addEventListener('click', () => this.pausePomodoro());
         document.getElementById('resetPomodoroBtn')?.addEventListener('click', () => this.resetPomodoro());
+
+        // Event Delegation for Todos
+        const todosContainer = document.getElementById('todosContainer');
+        if (todosContainer) {
+            todosContainer.addEventListener('click', this.handleTodoActions.bind(this));
+            todosContainer.addEventListener('keydown', this.handleTodoActions.bind(this));
+            todosContainer.addEventListener('blur', this.handleTodoActions.bind(this), true);
+        }
+
+        // Event Delegation for Notes - handled by bindNoteEvents method
     }
-    
-    bindTodoEvents() {
-        // Checkbox events
-        document.querySelectorAll('.todo-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('click', (e) => {
-                const todoId = e.target.dataset.todoId;
+
+    bindDragAndDropEvents() {
+        const todosContainer = document.getElementById('todosContainer');
+        if (!todosContainer) return;
+
+        let draggedElement = null;
+
+        todosContainer.addEventListener('dragstart', (e) => {
+            // Only allow dragging from the handle
+            // The event target is now the handle itself, which has draggable="true"
+            if (e.target && e.target.classList.contains('drag-handle')) {
+                draggedElement = e.target.closest('.todo-item');
+                // Use a timeout to allow the browser to create the drag image
+                setTimeout(() => {
+                    if (draggedElement) {
+                        draggedElement.classList.add('dragging');
+                    }
+                }, 0);
+            }
+        });
+
+        todosContainer.addEventListener('dragend', () => {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            }
+        });
+
+        todosContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = this.getDragAfterElement(todosContainer, e.clientY);
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            if (afterElement) {
+                afterElement.classList.add('drag-over');
+            }
+        });
+
+        todosContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const afterElement = document.querySelector('.drag-over');
+            if (draggedElement) {
+                const draggedId = draggedElement.dataset.id;
+                const targetId = afterElement ? afterElement.dataset.id : null;
+                this.reorderTodos(draggedId, targetId);
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+                document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            }
+        });
+    }
+
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.todo-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    reorderTodos(draggedId, targetId) {
+        const draggedIndex = this.todos.findIndex(t => t.id === draggedId);
+        if (draggedIndex === -1) return;
+
+        // Remove the dragged todo from its original position
+        const [draggedTodo] = this.todos.splice(draggedIndex, 1);
+
+        if (targetId === null) {
+            // Dropped at the end of the list
+            this.todos.push(draggedTodo);
+        } else {
+            // Dropped before a target element
+            const targetIndex = this.todos.findIndex(t => t.id === targetId);
+            if (targetIndex !== -1) {
+                this.todos.splice(targetIndex, 0, draggedTodo);
+            } else {
+                // Fallback: if target not found, add to end
+                this.todos.push(draggedTodo);
+            }
+        }
+
+        this.saveTodos();
+        this.renderTodos();
+    }
+
+    handleTodoActions(e) {
+        const target = e.target;
+        const todoItem = target.closest('.todo-item');
+        if (!todoItem) return;
+
+        const todoId = todoItem.dataset.id;
+
+        // Handle clicks
+        if (e.type === 'click') {
+            if (target.classList.contains('todo-checkbox')) {
                 this.toggleTodo(todoId);
-            });
-        });
-        
-        // Delete button events
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const todoId = e.target.dataset.todoId;
+            } else if (target.classList.contains('delete-btn')) {
                 this.deleteTodo(todoId);
-            });
-        });
-        
-        // Bind restore button events
-        document.querySelectorAll('.restore-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const todoId = parseInt(e.target.dataset.todoId);
+            } else if (target.classList.contains('restore-btn')) {
                 this.restoreTodo(todoId);
-            });
-        });
-
-        // Bind todo text click events for editing (single click)
-        document.querySelectorAll('.todo-text').forEach(text => {
-            let clickTimeout;
-            text.addEventListener('click', (e) => {
-                const todoId = parseInt(e.target.dataset.id);
-                
-                // Clear any existing timeout
-                if (clickTimeout) {
-                    clearTimeout(clickTimeout);
-                    clickTimeout = null;
-                    // Double click - go to focus mode with timer
-                    this.goToFocusModeWithTodo(todoId);
-                    return;
+            } else if (target.classList.contains('todo-text')) {
+                const textElementId = target.dataset.id;
+                if (this.clickTimeouts[textElementId]) {
+                    clearTimeout(this.clickTimeouts[textElementId]);
+                    delete this.clickTimeouts[textElementId];
+                    this.goToFocusModeWithTodo(textElementId);
+                } else {
+                    this.clickTimeouts[textElementId] = setTimeout(() => {
+                        this.startEditTodo(textElementId);
+                        delete this.clickTimeouts[textElementId];
+                    }, 300);
                 }
-                
-                // Single click - start editing after delay
-                clickTimeout = setTimeout(() => {
-                    this.startEditTodo(todoId);
-                    clickTimeout = null;
-                }, 300);
-            });
-        });
+            }
+        }
 
-        // Bind edit input events
-        document.querySelectorAll('.todo-edit-input').forEach(input => {
-            input.addEventListener('blur', (e) => {
-                const todoId = parseInt(e.target.dataset.id);
-                this.finishEditTodo(todoId, e.target.value);
-            });
-            
-            input.addEventListener('keydown', (e) => {
+        // Handle input events
+        if (target.classList.contains('todo-edit-input')) {
+            const inputId = target.dataset.id;
+            if (e.type === 'keydown') {
                 if (e.key === 'Enter') {
-                    const todoId = parseInt(e.target.dataset.id);
-                    this.finishEditTodo(todoId, e.target.value);
+                    this.finishEditTodo(inputId, target.value);
                 } else if (e.key === 'Escape') {
-                    const todoId = parseInt(e.target.dataset.id);
-                    this.cancelEditTodo(todoId);
+                    this.cancelEditTodo(inputId);
                 }
-            });
-        });
+            } else if (e.type === 'blur') {
+                this.finishEditTodo(inputId, target.value);
+            }
+        }
+    }
+
+    _getLocalISODate(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     setDefaultDate() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this._getLocalISODate();
         const dateInput = document.getElementById('todoDate');
         if (dateInput) {
             dateInput.value = today;
@@ -202,7 +290,7 @@ class TodoApp {
         const todo = {
             id: Date.now().toString(),
             text: text,
-            date: date || new Date().toISOString().split('T')[0],
+            date: date || this._getLocalISODate(),
             completed: false,
             createdAt: new Date().toISOString(),
             category: category || null
@@ -247,7 +335,7 @@ class TodoApp {
     }
     
     restoreTodo(id) {
-        const todo = this.todos.find(todo => todo.id === id);
+        const todo = this.todos.find(todo => todo.id === id.toString());
         if (todo && todo.deleted) {
             todo.deleted = false;
             delete todo.deletedAt;
@@ -318,7 +406,7 @@ class TodoApp {
     }
 
     editNote(id, newText) {
-        const note = this.notes.find(n => n.id === String(id));
+        const note = this.notes.find(n => n.id === Number(id));
         if (note) {
             note.text = newText;
             note.updatedAt = new Date().toISOString();
@@ -328,7 +416,7 @@ class TodoApp {
     }
 
     deleteNote(id) {
-        this.notes = this.notes.filter(n => n.id !== String(id));
+        this.notes = this.notes.filter(n => n.id !== Number(id));
         this.saveNotes();
         this.renderNotes();
     }
@@ -441,16 +529,6 @@ class TodoApp {
             }
         } else {
             // If empty, cancel edit
-            this.cancelEditNote(id);
-        }
-    }
-
-    handleNoteKeydown(event, id, value) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            this.finishEditNote(id, value);
-        } else if (event.key === 'Escape') {
-            event.preventDefault();
             this.cancelEditNote(id);
         }
     }
@@ -584,9 +662,8 @@ class TodoApp {
             // Otherwise, show today's todos (including completed ones - soft delete)
             todosToShow = this.todos.filter(todo => {
                 if (todo.deleted) return false; // Only filter hard deleted todos
-                // Fix timezone issue by comparing date strings directly
-                const todoDate = todo.date; // Already in YYYY-MM-DD format
-                const today = new Date().toISOString().split('T')[0]; // Get today in YYYY-MM-DD format
+                const todoDate = todo.date;
+                const today = this._getLocalISODate();
                 return todoDate === today;
                 // Note: We keep completed todos visible (soft delete behavior)
             });
@@ -703,9 +780,8 @@ class TodoApp {
         
         const todayTodos = this.todos.filter(todo => {
             if (todo.deleted) return false;
-            // Fix timezone issue by comparing date strings directly
-            const todoDate = todo.date; // Already in YYYY-MM-DD format
-            const today = new Date().toISOString().split('T')[0]; // Get today in YYYY-MM-DD format
+            const todoDate = todo.date;
+            const today = this._getLocalISODate();
             return todoDate === today;
         });
 
@@ -792,7 +868,7 @@ class TodoApp {
 
     goToFocusModeWithTodo(todoId) {
         // Find the todo
-        const todo = this.todos.find(t => t.id === todoId);
+        const todo = this.todos.find(t => t.id === todoId.toString());
         if (!todo || todo.deleted || todo.completed) {
             return;
         }
@@ -899,6 +975,7 @@ class TodoApp {
         
         todosList.innerHTML = filteredTodos.map(todo => `
             <div class="todo-item ${todo.deleted ? 'deleted' : ''}" data-id="${todo.id}">
+                ${!todo.deleted ? '<div class="drag-handle" title="Arrastar para reordenar" draggable="true">⋮⋮</div>' : ''}
                 <div class="todo-checkbox ${todo.completed ? 'completed' : ''}" 
                      data-todo-id="${todo.id}" ${todo.deleted ? 'style="pointer-events: none;"' : ''}></div>
                 <div class="todo-content">
@@ -916,9 +993,8 @@ class TodoApp {
                 </div>
             </div>
         `).join('');
-        
-        // Add event listeners after rendering
-        this.bindTodoEvents();
+
+        // Event binding is now handled by delegation in bindEvents
     }
 
     updateStats() {
@@ -1038,7 +1114,7 @@ class TodoApp {
             {
                 id: Date.now().toString() + '1',
                 text: 'Tarefa de hoje',
-                date: today.toISOString().split('T')[0],
+                date: this._getLocalISODate(today),
                 completed: false,
                 deleted: false,
                 category: 'Teste'
@@ -1046,7 +1122,7 @@ class TodoApp {
             {
                 id: Date.now().toString() + '2',
                 text: 'Tarefa de ontem',
-                date: yesterday.toISOString().split('T')[0],
+                date: this._getLocalISODate(yesterday),
                 completed: false,
                 deleted: false,
                 category: 'Teste'
@@ -1054,7 +1130,7 @@ class TodoApp {
             {
                 id: Date.now().toString() + '3',
                 text: 'Tarefa de amanhã',
-                date: tomorrow.toISOString().split('T')[0],
+                date: this._getLocalISODate(tomorrow),
                 completed: false,
                 deleted: false,
                 category: 'Teste'
@@ -1062,7 +1138,7 @@ class TodoApp {
             {
                 id: Date.now().toString() + '4',
                 text: 'Tarefa da próxima semana',
-                date: nextWeek.toISOString().split('T')[0],
+                date: this._getLocalISODate(nextWeek),
                 completed: false,
                 deleted: false,
                 category: 'Teste'
@@ -1070,7 +1146,7 @@ class TodoApp {
             {
                 id: Date.now().toString() + '5',
                 text: 'Tarefa do próximo mês',
-                date: nextMonth.toISOString().split('T')[0],
+                date: this._getLocalISODate(nextMonth),
                 completed: false,
                 deleted: false,
                 category: 'Teste'

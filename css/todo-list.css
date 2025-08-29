@@ -99,6 +99,58 @@
     opacity: 0.7;
 }
 
+/* Drag handle styles */
+.drag-handle {
+    cursor: grab;
+    color: var(--text-secondary);
+    font-size: 16px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Drag and drop states */
+.todo-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.todo-item.drag-over {
+    border-top: 3px solid var(--primary-color);
+    transform: translateY(2px);
+    background: var(--hover-bg);
+}
+
+/* Disable pointer events on child elements during drag */
+.todo-item.dragging * {
+    pointer-events: none;
+}
+
+/* Smooth transitions for drag feedback */
+.todo-item {
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+/* Drag handle visibility on mobile */
+@media (max-width: 768px) {
+    .drag-handle {
+        opacity: 1;
+        font-size: 14px;
+    }
+}
+
 .todo-item.completed .todo-text {
     text-decoration: line-through;
     color: var(--text-secondary);
