@@ -100,6 +100,14 @@ class TodoApp {
         });
         document.getElementById('exportNotesBtn')?.addEventListener('click', () => this.exportNotes());
 
+        // Export todos button
+        const exportTodosBtn = document.getElementById('exportTodosBtn');
+        if (exportTodosBtn) {
+            exportTodosBtn.addEventListener('click', () => {
+                this.exportTodos();
+            });
+        }
+
         // Timer events
         document.getElementById('startTimerBtn')?.addEventListener('click', () => this.startTimer());
         document.getElementById('pauseTimerBtn')?.addEventListener('click', () => this.pauseTimer());
@@ -563,6 +571,98 @@ class TodoApp {
         const a = document.createElement('a');
         a.href = url;
         a.download = `notas_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    exportTodos() {
+        const filteredTodos = this.getFilteredTodos();
+        
+        if (filteredTodos.length === 0) {
+            alert('Não há tarefas para exportar no filtro selecionado!');
+            return;
+        }
+        
+        // Get filter name for filename
+        const filterNames = {
+            'all': 'todas',
+            'today': 'hoje',
+            'yesterday': 'ontem',
+            'week': 'semana',
+            'month': 'mes',
+            'year': 'ano'
+        };
+        
+        const filterName = filterNames[this.currentFilter] || 'filtradas';
+        
+        // Group todos by status
+        const activeTodos = filteredTodos.filter(todo => !todo.deleted && !todo.completed);
+        const completedTodos = filteredTodos.filter(todo => !todo.deleted && todo.completed);
+        const deletedTodos = filteredTodos.filter(todo => todo.deleted);
+        
+        let content = `TAREFAS - ${filterName.toUpperCase()}\n`;
+        content += `Exportado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}\n\n`;
+        
+        // Active todos
+        if (activeTodos.length > 0) {
+            content += `PENDENTES (${activeTodos.length}):\n`;
+            content += '=' + '='.repeat(20) + '\n';
+            activeTodos.forEach(todo => {
+                content += `□ ${todo.text}\n`;
+                if (todo.category) {
+                    content += `  Categoria: ${todo.category}\n`;
+                }
+                content += `  Data: ${this.formatDate(todo.date)}\n\n`;
+            });
+        }
+        
+        // Completed todos
+        if (completedTodos.length > 0) {
+            content += `CONCLUÍDAS (${completedTodos.length}):\n`;
+            content += '=' + '='.repeat(20) + '\n';
+            completedTodos.forEach(todo => {
+                content += `☑ ${todo.text}\n`;
+                if (todo.category) {
+                    content += `  Categoria: ${todo.category}\n`;
+                }
+                content += `  Data: ${this.formatDate(todo.date)}\n\n`;
+            });
+        }
+        
+        // Deleted todos (only if showing deleted)
+        if (deletedTodos.length > 0 && this.showDeleted) {
+            content += `EXCLUÍDAS (${deletedTodos.length}):\n`;
+            content += '=' + '='.repeat(20) + '\n';
+            deletedTodos.forEach(todo => {
+                content += `✗ ${todo.text}\n`;
+                if (todo.category) {
+                    content += `  Categoria: ${todo.category}\n`;
+                }
+                content += `  Data: ${this.formatDate(todo.date)}\n`;
+                if (todo.deletedAt) {
+                    content += `  Excluída em: ${this.formatDate(todo.deletedAt.split('T')[0])}\n`;
+                }
+                content += '\n';
+            });
+        }
+        
+        // Summary
+        content += '\nRESUMO:\n';
+        content += '=' + '='.repeat(10) + '\n';
+        content += `Total de tarefas: ${filteredTodos.length}\n`;
+        content += `Pendentes: ${activeTodos.length}\n`;
+        content += `Concluídas: ${completedTodos.length}\n`;
+        if (this.showDeleted) {
+            content += `Excluídas: ${deletedTodos.length}\n`;
+        }
+        
+        const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tarefas_${filterName}_${new Date().toISOString().split('T')[0]}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

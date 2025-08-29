@@ -212,3 +212,39 @@
     box-shadow: 0 2px 8px var(--shadow-medium);
     transform: translateY(-1px);
 }
+
+/* Export Section */
+.export-section {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+    padding: 0 12px;
+}
+
+.export-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-btn:hover {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+.export-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px var(--shadow-light);
+}

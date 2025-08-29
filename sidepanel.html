@@ -51,13 +51,18 @@
 
         <!-- Todo List View -->
         <div class="view" id="todoView">
-            <div class="date-filters">
-                <button class="filter-btn" data-filter="all">Todas</button>
-                <button class="filter-btn" data-filter="yesterday">Ontem</button>
-                <button class="filter-btn active" data-filter="today">Hoje</button>
-                <button class="filter-btn" data-filter="week">Semana</button>
-                <button class="filter-btn" data-filter="month">Mês</button>
-                <button class="filter-btn" data-filter="year">Ano</button>
+            <div class="filters-container">
+                <div class="date-filters">
+                    <button class="filter-btn" data-filter="all">Todas</button>
+                    <button class="filter-btn" data-filter="yesterday">Ontem</button>
+                    <button class="filter-btn active" data-filter="today">Hoje</button>
+                    <button class="filter-btn" data-filter="week">Semana</button>
+                    <button class="filter-btn" data-filter="month">Mês</button>
+                    <button class="filter-btn" data-filter="year">Ano</button>
+                </div>
+                <button id="exportTodosBtn" class="icon-btn" title="Exportar tarefas filtradas para TXT">
+                    📄
+                </button>
             </div>
 
             <div class="add-todo-section">
